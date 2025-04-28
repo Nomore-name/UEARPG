@@ -26,20 +26,34 @@ protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
-	virtual void OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	virtual void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	// BlueprintNativeEvent = C++基础实现，在蓝图中可以拓展，使用BlueprintCallable允许蓝图子类调用函数来触发该函数
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void Explode();
 
+	UFUNCTION()
+	void OnRep_Used();
+
 	//Actor在构造函数后，PostInitializeComponents将被调用，通常在这绑定相关方法，在构造函数中容易被覆生成的蓝图盖掉
 	virtual void PostInitializeComponents() override;
 
-	virtual void DestorySelf();
+	virtual void HideSelf();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	//使用ExposeOnSpawn = true时，必须要EditAnywhere和BlueprintReadWrite，否则会编译出错
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pool", Meta = (ExposeOnSpawn = true))
+	float m_AliveTime = 5.0f;
+
+    UFUNCTION(BlueprintCallable, Category = "Pool")
+	virtual void SetIsUse(bool bUse);
+
+	bool IsUsed() const;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -57,11 +71,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Effects|Shake")
 	TSubclassOf<UCameraShakeBase>  m_ImpactShake;
 	UPROPERTY(EditDefaultsOnly, Category = "Effects|Shake")
-	float m_ImpactShakeInnerRadius;
+	float m_ImpactShakeInnerRadius = 0.0f;
 	UPROPERTY(EditDefaultsOnly, Category = "Effects|Shake")
-	float m_ImpactShakeOuterRadius;
+	float m_ImpactShakeOuterRadius = 1500.0f;
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing=OnRep_Used, Category = "Pool")
+	bool m_bUsed = false;
 
 private:
-	FTimerHandle m_DestorySelfTimeHandle;
+	FTimerHandle m_HideTimeHandle;
 
 };

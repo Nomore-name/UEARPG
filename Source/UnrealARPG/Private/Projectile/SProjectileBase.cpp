@@ -9,15 +9,18 @@
 #include <Runtime/Engine/Classes/Components/AudioComponent.h>
 #include <Runtime/Engine/Classes/Particles/ParticleSystem.h>
 #include <Runtime/Engine/Classes/Sound/SoundCue.h>
+#include "Runtime/Engine/Public/Net/UnrealNetwork.h"
+#include "../UnrealARPG.h"
 
 // Sets default values
 ASProjectileBase::ASProjectileBase()
 {
+	LogOnScreen(GetWorld(), FString::Printf(TEXT("ASProjectileBase %d"), GetLocalRole()), FColor::Red);
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	m_SphereCom = CreateDefaultSubobject<USphereComponent>("SphereCom");
-	m_SphereCom->OnComponentHit.AddDynamic(this, &ASProjectileBase::OnComponentHit);
-	m_SphereCom->SetCollisionProfileName("Projectile");								//通过自定义文件信息设置碰撞相应
+	m_SphereCom->SetCollisionProfileName("Projectile");	
+	m_SphereCom->OnComponentBeginOverlap.AddDynamic(this, &ASProjectileBase::OnComponentBeginOverlap);
 	RootComponent = m_SphereCom;
 
 	m_ParticleSysCom = CreateDefaultSubobject<UParticleSystemComponent>("ParticleSystemCom");
@@ -30,22 +33,19 @@ ASProjectileBase::ASProjectileBase()
 	m_PjMoveCom->bRotationFollowsVelocity = true;
 	m_PjMoveCom->bInitialVelocityInLocalSpace = true;
 	m_PjMoveCom->ProjectileGravityScale = 0.0f;
-	m_PjMoveCom->InitialSpeed = 8000;
+	m_PjMoveCom->InitialSpeed = 0.0f;
 	
-	m_ImpactShakeInnerRadius = 0.0f;
-	m_ImpactShakeOuterRadius = 1500.0f;
-
 	bReplicates = true;
+	SetReplicateMovement(true);
 }
 
 // Called when the game starts or when spawned
 void ASProjectileBase::BeginPlay()
 {
 	Super::BeginPlay();
-	GetWorldTimerManager().SetTimer(m_DestorySelfTimeHandle, this, &ASProjectileBase::DestorySelf, 10.0f);
 }
 
-void ASProjectileBase::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void ASProjectileBase::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	Explode_Implementation();
 }
@@ -57,15 +57,30 @@ void ASProjectileBase::Explode_Implementation()
 	UGameplayStatics::PlayWorldCameraShake(this,m_ImpactShake, GetActorLocation(), m_ImpactShakeInnerRadius, m_ImpactShakeOuterRadius);
 }
 
+void ASProjectileBase::OnRep_Used()
+{
+	SetActorEnableCollision(m_bUsed);
+	SetActorHiddenInGame(!m_bUsed);
+	SetActorTickEnabled(m_bUsed);
+
+	if (m_ParticleSysCom) {
+		m_ParticleSysCom->SetActive(m_bUsed);
+	}
+
+	if (m_bUsed) {
+		GetWorldTimerManager().ClearTimer(m_HideTimeHandle);
+		GetWorldTimerManager().SetTimer(m_HideTimeHandle, this, &ASProjectileBase::HideSelf, m_AliveTime);
+	}
+}
+
 void ASProjectileBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 }
 
-void ASProjectileBase::DestorySelf()
+void ASProjectileBase::HideSelf()
 {
-	GetWorldTimerManager().ClearTimer(m_DestorySelfTimeHandle);
-	Destroy();
+	SetIsUse(false);
 }
 
 // Called every frame
@@ -73,5 +88,25 @@ void ASProjectileBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ASProjectileBase::SetIsUse(bool bUse)
+{
+	if (HasAuthority()) {
+		m_bUsed = bUse;
+		OnRep_Used();
+	}
+}
+
+bool ASProjectileBase::IsUsed() const
+{
+	return m_bUsed;
+}
+
+void ASProjectileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASProjectileBase, m_bUsed);
 }
 

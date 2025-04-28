@@ -18,6 +18,7 @@
 #include <../UnrealARPG.h>
 #include <Runtime/UMG/Public/Blueprint/UserWidget.h>
 #include <UI/SUserWidgetEnemyHealthBar.h>
+#include "Components/SProjectilePoolComponent.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -37,6 +38,8 @@ ASCharacter::ASCharacter()
 	m_ChildDefenseComp = CreateDefaultSubobject<UChildActorComponent>("ChildComp");
 	m_ChildDefenseComp->SetupAttachment(GetMesh(), TEXT("shield"));
 	m_ChildDefenseComp->SetChildActorClass(ASShield::StaticClass());
+
+	m_ProjectilePoolComp = CreateDefaultSubobject<USProjectilePoolComponent>("ProjectileComp");
 }
 
 // Called when the game starts or when spawned
@@ -143,6 +146,13 @@ void ASCharacter::SetLife(float life)
 	if (m_AttributeComp) {
 		float curLife = m_AttributeComp->GetCurHealth();
 		m_AttributeComp->AddHealth(this, life - curLife);
+	}
+}
+
+void ASCharacter::SpawnProjectile(FTransform Transform)
+{
+	if (m_ProjectilePoolComp) {
+		m_ProjectilePoolComp->SpawnFromPool(Transform);
 	}
 }
 

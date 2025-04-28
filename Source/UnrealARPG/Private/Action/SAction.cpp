@@ -9,7 +9,7 @@
 
 void USAction::StartAction_Implementation(AActor* Instigator)
 {
-	LogOnScreen(Instigator, FString::Printf(TEXT("Start Action: %s"), *GetNameSafe(this)));
+	//LogOnScreen(Instigator, FString::Printf(TEXT("Start Action: %s"), *GetNameSafe(this)));
 
 	if (GetOwningComponent()->GetOwnerRole() == ROLE_Authority) {
 		m_TimeStarted = GetWorld()->TimeSeconds;
@@ -26,7 +26,7 @@ void USAction::StartAction_Implementation(AActor* Instigator)
 
 void USAction::StopAction_Implementation(AActor* Instigator)
 {
-	LogOnScreen(Instigator, FString::Printf(TEXT("Stop Action: %s"), *GetNameSafe(this)));
+	//LogOnScreen(Instigator, FString::Printf(TEXT("Stop Action: %s"), *GetNameSafe(this)));
 
 	USActionComponent* Comp = GetOwningComponent();
 	if (Comp) {
@@ -58,7 +58,7 @@ bool USAction::CanStart_Implementation(AActor* Instigator) const
 
 void USAction::OnRep_ChangeData()
 {
-	LogOnScreen(GetOuter(), "OnRep_ChangeData");
+	//LogOnScreen(GetOuter(), "OnRep_ChangeData");
 
 	if (m_RepData.bStarted) {
 		StartAction(m_RepData.Instigator);

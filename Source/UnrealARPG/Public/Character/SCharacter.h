@@ -18,6 +18,7 @@ class UAnimMontage;
 class USAttributeComponent;
 class USActionComponent;
 class USUserWidgetEnemyHealthBar;
+class USProjectilePoolComponent;
 
 UCLASS()
 class UNREALARPG_API ASCharacter : public ACharacter
@@ -91,6 +92,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void TogglePauseMenu();
 
+	UFUNCTION()
+	void SpawnProjectile(FTransform Transform);
+
 protected:
 	//输入移动相关
 	UPROPERTY(EditDefaultsOnly, Category="Input")
@@ -143,6 +147,13 @@ protected:
 
 	UPROPERTY()
 	USUserWidgetEnemyHealthBar* m_HealthBar = nullptr;
+
+	//投射物对象池
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pool")
+    USProjectilePoolComponent* m_ProjectilePoolComp = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category="Attack")
+	TSubclassOf<AActor> m_ProjectleClass = nullptr;
 
 	//攻击相关(已弃用，改用Action实现）
 	/*

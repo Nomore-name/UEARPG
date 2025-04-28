@@ -8,13 +8,13 @@
 
 ASProjectileTransfer::ASProjectileTransfer()
 {
-	m_PjMoveCom->InitialSpeed = 6000.f;
 }
 
 void ASProjectileTransfer::BeginPlay()
 {
-	Super::BeginPlay();
-
+    Super::BeginPlay();
+	SetIsUse(true);
+	m_PjMoveCom->Velocity = 6000.f * GetActorForwardVector();
 	GetWorldTimerManager().SetTimer(TimerHandle_DelayedDetonate, this, &ASProjectileTransfer::Explode, DetonateDelay);
 }
 

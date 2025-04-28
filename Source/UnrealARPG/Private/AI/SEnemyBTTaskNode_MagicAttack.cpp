@@ -7,6 +7,7 @@
 #include "Runtime/AIModule/Classes/BehaviorTree/BlackboardComponent.h"
 #include <Runtime/Engine/Classes/Kismet/KismetMathLibrary.h>
 #include "Action/SActionComponent.h"
+#include "Components/SProjectilePoolComponent.h"
 
 
 EBTNodeResult::Type USEnemyBTTaskNode_MagicAttack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -46,11 +47,6 @@ void USEnemyBTTaskNode_MagicAttack::SpawnMagicAttack(AAIController* OwnerControl
 		AActor* TargetActor = Cast<AActor>(OwnerController->GetBlackboardComponent()->GetValueAsObject("TargetActor"));
 
 		if (TargetActor) {
-
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-			SpawnParams.Instigator = OwnerCharacter;
-
 			float RandSpread = m_MaxRandSpread;
 			USActionComponent* ActionComp = Cast<USActionComponent>(OwnerCharacter->GetComponentByClass(USActionComponent::StaticClass()));
 			if (ActionComp) {
@@ -65,7 +61,10 @@ void USEnemyBTTaskNode_MagicAttack::SpawnMagicAttack(AAIController* OwnerControl
 
 			FTransform SpawnTrans = FTransform(SpawnRotator, HandLocation);
 			
-			GetWorld()->SpawnActor<AActor>(m_ProjectileClass, SpawnTrans, SpawnParams);
+			USProjectilePoolComponent* PoolComp = Cast<USProjectilePoolComponent>(OwnerCharacter->GetComponentByClass(USProjectilePoolComponent::StaticClass()));
+			if (PoolComp) {
+				PoolComp->SpawnFromPool(SpawnTrans);
+			}
 		}
 	}
 }

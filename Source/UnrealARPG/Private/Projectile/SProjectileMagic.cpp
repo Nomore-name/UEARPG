@@ -15,19 +15,29 @@ ASProjectileMagic::ASProjectileMagic()
 	m_PjMoveCom->ProjectileGravityScale = 0.0f;
 	m_PjMoveCom->bRotationFollowsVelocity = true;		//使发射物旋转跟随速度方向
 	m_PjMoveCom->bInitialVelocityInLocalSpace = true;	//使初始速度是以本地坐标系发射
-	m_PjMoveCom->InitialSpeed = 1000.0f;
+}
+
+void ASProjectileMagic::SetIsUse(bool bUse)
+{
+	Super::SetIsUse(bUse);
+
+	if (bUse) {
+		m_PjMoveCom->Velocity = 2000.f * GetActorForwardVector();
+	}else {
+		m_PjMoveCom->StopMovementImmediately();
+	}
+
 }
 
 void ASProjectileMagic::BeginPlay()
 {
 	Super::BeginPlay();
+	SetIsUse(false);
 	m_SphereCom->IgnoreActorWhenMoving(GetInstigator(), true);				//忽略事件引发者
 }
 
-void ASProjectileMagic::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void ASProjectileMagic::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	Super::OnComponentHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
-	
 	if (!OtherActor) {
 		return;
 	}
@@ -36,15 +46,10 @@ void ASProjectileMagic::OnComponentHit(UPrimitiveComponent* HitComponent, AActor
 		return;
 	}
 
-	/*USAttributeComponent* AttrComp = Cast<USAttributeComponent>(OtherActor->GetComponentByClass(USAttributeComponent::StaticClass()));
-	if (AttrComp) {
-		AttrComp->AddHealth(GetInstigator(), m_Damage);
-	}
-
-	Destroy();*/
+	Super::OnComponentBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
 	USGamePlayFunctionLibrary::ApplyAnger(GetInstigator(), OtherActor, m_AddAnger);
-	bool bDamage = USGamePlayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, m_Damage, Hit);
+	bool bDamage = USGamePlayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, m_Damage, SweepResult);
 
 	//BUFF添加只运行在服务端的逻辑
 	if (bDamage && m_DamageEffect != nullptr && HasAuthority()) {
@@ -57,6 +62,5 @@ void ASProjectileMagic::OnComponentHit(UPrimitiveComponent* HitComponent, AActor
 		}
 	}
 
-	Destroy();
+	SetIsUse(false);
 }
-

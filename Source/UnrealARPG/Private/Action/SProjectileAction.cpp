@@ -196,7 +196,12 @@ void USProjectileAction::ReleaseProjectile(AActor* Instigator)
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.Instigator = Character;
 
-	Character->GetWorld()->SpawnActor<AActor>(m_ProjectleClass, SpawnTrans, SpawnParams);
+	if (m_ActionName == "PrimaryAttack") {
+		//普通攻击比较频繁的创建销毁粒子，采用对象池处理
+		Character->SpawnProjectile(SpawnTrans);
+	} else {
+		Character->GetWorld()->SpawnActor<AActor>(m_ProjectleClass, SpawnTrans, SpawnParams);
+	}
 
 	m_ChangeNum = -1;
 	m_CurNum += m_ChangeNum;
